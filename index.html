@@ -1,0 +1,140 @@
+<html>
+<head>
+    <title>draw</title>
+    <style>
+    body{margin: 0px; background-color: #D4D4D4;}
+    </style>
+</head>
+<body>
+    <canvas></canvas>
+    <div id="tool"></div>
+</body>
+<script>
+var lastPoints = [];
+var canvas = document.getElementsByTagName('canvas');
+canvas.style.backgroundColor = "#FFF";
+canvas.height = window.innerHeight - 100; //默认=300
+canvas.width = window.innerWidth;         //默认=150
+
+canvas.onmousedown = startDraw;
+canvas.onmouseup = stopDraw;
+canvas.ontouchstart = startDraw;
+canvas.ontouchstop = stopDraw;
+canvas.ontouchmove = drawMouse; // 绑定ontouchmove，不绑定onmousemove
+
+var context = canvas.getContext("2d"); //二维绘图上下文
+context.lineCap = "round";
+context.lineJoin = "round";
+setColor();
+setLineWidth();
+
+function setColor(color) {
+    color = color || "rgb(0, 0, 0)";
+    context.strokeStyle = context.fillStyle = color;
+}
+
+function setLineWidth(size) {
+    size = size || 2;
+    context.lineWidth = size;
+}
+
+function startDraw(e) {
+    if (e.touches) {
+        e.preventDefault();
+        // Touch event
+        for (var i = 0; i < e.touches.length; i++) {
+            lastPoints[i] = getCoords(e.touches[i]);
+        }
+    }
+    else {
+        // Mouse event
+        lastPoints[0] = getCoords(e);
+        canvas.onmousemove = drawMouse;
+    }
+    context.beginPath();
+    return false;
+}
+
+function drawMouse(e) {
+    if (e.touches) {
+        e.preventDefault();
+        e.stopPropagation();
+        for (var i = 0; i < e.touches.length; i++) {
+            var p = getCoords(e.touches[i]);
+            lastPoints[i] = drawLine(lastPoints[i], p);
+        }
+    }
+    else {
+        var p = getCoords(e);
+        lastPoints[0] = drawLine(lastPoints[0], p);
+    }
+    context.stroke();
+    context.closePath();
+    context.beginPath();
+    return false;
+}
+
+function stopDraw(e) {
+    // 点击一下的时候画一个点
+    if (e.touches) {
+        e.preventDefault();
+        e.stopPropagation();
+        for (var i = 0; i < e.touches.length; i++) {
+            var p = getCoords(e.touches[i]);
+            if(lastPoints[i].x == p.x && lastPoints[i].y == p.y)
+                lastPoints[i] = drawDot(p);
+        }
+    }
+    else {
+        var p = getCoords(e);
+        if(lastPoints[0].x == p.x && lastPoints[0].y == p.y)
+            lastPoints[0] = drawDot(p);
+        canvas.onmousemove = null; 
+    }
+    context.fill();
+    context.closePath();
+    return false;
+}
+function getCoords(e) {
+    if (e.offsetX) {
+        // Works in Chrome / Safari (except on iPad/iPhone)
+        return { x: e.offsetX, y: e.offsetY };
+    }
+    else if (e.layerX) {
+        // Works in Firefox
+        return { x: e.layerX, y: e.layerY };
+    }
+    else {
+        // Works in Safari on iPad/iPhone
+        return { x: e.pageX - canvas.offsetLeft, y: e.pageY - canvas.offsetTop };
+    }
+}
+// Draw a line on the canvas from (s)tart to (e)nd
+function drawLine(s, e) {
+    if (s && e) {
+        context.moveTo(s.x, s.y);
+        context.lineTo(e.x, e.y);
+    }
+    return e;
+}
+function drawDot(p) {
+    context.arc(p.x, p.y, context.lineWidth/2, 0, Math.PI*2, true);
+    return p;
+}
+
+function clearAll() {
+    context.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+function saveCanvas() {
+    var imgSrc = canvas.toDataURL();
+    var oImgElement = document.createElement("img");
+    oImgElement.src = imgSrc;
+    oImgElement.width = 100;
+    oImgElement.style.margin = "10px 8px";
+    oImgElement.style.backgroundColor = "#FFF";
+    document.body.appendChild(oImgElement);
+}
+
+</script>
+</html>
